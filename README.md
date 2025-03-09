@@ -62,4 +62,140 @@
 1. 确保场景中有地面对象，并将其Layer设置为"Ground"
 2. 在Inspector中设置NetworkPlayer脚本的groundLayer为"Ground"
 3. 调整groundCheckDistance、jumpForce和gravityMultiplier参数以获得最佳效果
-4. 确保玩家预制体有Rigidbody和CapsuleCollider组件 
+4. 确保玩家预制体有Rigidbody和CapsuleCollider组件
+
+## Mixamo使用指南
+
+### 1. 获取角色模型
+- 访问 mixamo.com
+- 使用Adobe账号登录
+- 选择 "Characters" 标签
+- 选择喜欢的角色模型（推荐Y Bot或X Bot作为开始）
+
+### 2. 获取动画
+基础动画推荐清单：
+- Idle（待机）
+- Walking（行走）
+- Running（跑步）
+- Jump（跳跃）
+- Jump Landing（着陆）
+
+### 3. 导出步骤
+1. 选择动画后点击"Download"
+2. 选择以下设置：
+   - Format: FBX for Unity
+   - Skin: With Skin
+   - Frames per Second: 30
+   - Keyframe Reduction: None（保证动画质量）
+
+### 4. Unity导入设置
+1. 将下载的FBX文件拖入Unity项目
+2. 在Inspector中设置：
+   - Rig类型选择"Humanoid"
+   - 勾选"Apply Root Motion"（如果需要）
+   - 确保动画循环选项正确设置
+
+### 5. 动画设置建议
+```csharp
+// 创建Animator Controller
+// 设置基本参数
+- isWalking (bool)
+- isRunning (bool)
+- isJumping (bool)
+- verticalSpeed (float)
+
+// 动画状态机示例结构
+Idle -> Walking -> Running
+  |
+  -> Jumping -> Landing -> Idle
+```
+
+### 6. 基础动画代码示例
+```csharp
+public class CharacterAnimator : MonoBehaviour
+{
+    private Animator animator;
+    private CharacterController controller;
+    
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        controller = GetComponent<CharacterController>();
+    }
+    
+    void Update()
+    {
+        // 获取移动输入
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        
+        // 计算移动量
+        bool isMoving = Mathf.Abs(horizontal) > 0.1f || Mathf.Abs(vertical) > 0.1f;
+        
+        // 更新动画参数
+        animator.SetBool("isWalking", isMoving);
+        animator.SetBool("isRunning", isMoving && Input.GetKey(KeyCode.LeftShift));
+        animator.SetBool("isJumping", !controller.isGrounded);
+    }
+}
+```
+
+### 7. 注意事项
+1. 动画文件命名要规范
+2. 正确设置动画循环
+3. 调整动画过渡时间
+4. 设置适当的动画层权重 
+
+## 第三人称相机与角色控制系统
+
+### 鼠标控制视角功能
+1. 水平旋转（左右）
+   - 控制整个角色的旋转
+   - 影响移动方向
+   - 平滑过渡
+
+2. 垂直旋转（上下）
+   - 仅控制相机视角
+   - 有最大/最小角度限制
+   - 不影响角色移动
+
+3. 相机跟随系统
+   - 跟随角色位置和旋转
+   - 平滑过渡
+   - 保持固定距离和高度
+
+### 实现细节
+1. 角色控制
+   ```csharp
+   // 水平旋转（左右）
+   rotationY += mouseX * rotationSpeed;
+   transform.rotation = Quaternion.Euler(0, rotationY, 0);
+   
+   // 垂直旋转（上下）
+   rotationX -= mouseY * rotationSpeed;
+   rotationX = Mathf.Clamp(rotationX, minVerticalAngle, maxVerticalAngle);
+   cameraTarget.localRotation = Quaternion.Euler(rotationX, 0, 0);
+   ```
+
+2. 相机跟随
+   ```csharp
+   // 计算相机位置
+   targetPosition = target.position - target.forward * distance + Vector3.up * height;
+   
+   // 平滑移动
+   transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, 1f / smoothSpeed);
+   ```
+
+3. 移动控制
+   ```csharp
+   // 相对于角色朝向的移动
+   Vector3 direction = new Vector3(horizontal, 0, vertical);
+   Vector3 moveDirection = transform.TransformDirection(direction);
+   controller.Move(moveDirection * moveSpeed * Time.deltaTime);
+   ```
+
+### 设置步骤
+1. 创建CameraTarget子对象
+2. 配置NetworkPlayer组件
+3. 配置NetworkCameraFollow组件
+4. 调整旋转和平滑参数 
