@@ -149,11 +149,8 @@ MonoBehaviour:
   moveSpeed: 5
   jumpForce: 5
   gravity: -9.81
-  rotationSpeed: 5
-  minVerticalAngle: -60
-  maxVerticalAngle: 60
+  mouseSensitivity: 3
   controller: {fileID: 1318486606543889860}
-  cameraTarget: {fileID: 2382196659821951389}
 --- !u!114 &3617687626579284365
 MonoBehaviour:
   m_ObjectHideFlags: 0
